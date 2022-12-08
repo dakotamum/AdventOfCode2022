@@ -1,4 +1,9 @@
-GLOBAL_SUM = 0
+global SUM_OF_THINGS_UNDER_LIMIT
+SUM_OF_THINGS_UNDER_LIMIT = 0
+global MIN_DUR_TO_DELETE
+MIN_DUR_TO_DELETE = 70000000
+global SPACE_NEEDED
+
 class FileEntity:
     def __init__(self, entityName, fileSize = 0, parent=None):
         self.m_entityName = entityName
@@ -22,42 +27,42 @@ class FileEntity:
                 for i in range(numspaces):
                     spaces += " "
                 print(spaces + child.m_entityName)
-    def getMemorySum(self):
-        print(self.m_entityName)
-        dur_sizes = 0
-        file_sizes = 0
+    def getMemorySum(self, modGlob = False):
+        global SUM_OF_THINGS_UNDER_LIMIT
+        curr_sum = 0
         for child in self.m_children:
             if child.m_fileSize == 0:
-                dur_sizes += child.getMemorySum()
+                curr_sum += child.getMemorySum(modGlob)
             else:
-                file_sizes += child.m_fileSize
-        if dur_sizes + file_sizes < 100001:
-            print (dur_sizes + file_sizes)
-            print ('---------')
-            return dur_sizes + file_sizes
-        else:
-            print (dur_sizes)
-            print ('---------')
-            return dur_sizes
-
-    # def getMemorySum(self):
-    #     # print(self.m_entityName)
-    #     curr_dur_size = 0
-    #     for child in self.m_children:
-    #         if child.m_fileSize == 0:
-    #             curr_dur_size += child.getMemorySum()
-    #         else:
-    #             curr_dur_size += child.m_fileSize
-    #     return curr_dur_size
+                curr_sum += child.m_fileSize
+        if curr_sum < 100000 and modGlob:
+            SUM_OF_THINGS_UNDER_LIMIT += curr_sum
+        return curr_sum
+    def findMinMemory(self):
+        global MIN_DUR_TO_DELETE
+        curr_sum = 0
+        for child in self.m_children:
+            if child.m_fileSize == 0:
+                curr_sum += child.findMinMemory()
+            else:
+                curr_sum += child.m_fileSize
+        if curr_sum > SPACE_NEEDED and curr_sum < MIN_DUR_TO_DELETE:
+            MIN_DUR_TO_DELETE = curr_sum
+        return curr_sum
+    def getDurToDelete(self):
+        global MIN_DUR_TO_DELETE
+        MIN_DUR_TO_DELETE = 70000000
+        global SPACE_NEEDED
+        SPACE_NEEDED = 30000000 - (70000000 - self.getMemorySum())
+        self.findMinMemory()
+        toDelete = MIN_DUR_TO_DELETE
+        return toDelete
 
 file = open('input.txt','r')
 raw_data = file.read().strip().split("\n")
-
 rootDur = FileEntity("root")
 currDur = rootDur
 currDur.AddChild("/")
-
-# print(currDur.m_entityName)
 
 for line in raw_data:
     broken_up_line = line.split()
@@ -74,5 +79,10 @@ for line in raw_data:
             currDur.AddChild(broken_up_line[1], 0)
         else:
             currDur.AddChild(broken_up_line[1], int(broken_up_line[0]))
-rootDur.PrintTree()
-print(rootDur.getMemorySum())
+
+# part a
+totalSum = rootDur.m_children[0].getMemorySum(True)
+print(SUM_OF_THINGS_UNDER_LIMIT)
+
+# part b
+print(rootDur.m_children[0].getDurToDelete())
